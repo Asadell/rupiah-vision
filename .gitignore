@@ -1,0 +1,30 @@
+# Datasets and processed data
+data/
+datasets/
+*.zip
+*.tar.gz
+
+# Trained models & checkpoints
+models/
+runs/
+*.keras
+*.h5
+*.pth
+*.pt
+*.onnx
+*.tflite
+
+# Python / Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+*.log
