@@ -103,14 +103,38 @@ models/tflite/labels.txt                    → assets/models/rupiah_labels.txt
 | 5 | `50000`  | Rp 50.000 |
 | 6 | `100000` | Rp 100.000 |
 
-## Detail Dataset
+## Detail Dataset Roboflow
 
-| Dataset | Gambar | Format Label |
-|---------|--------|--------------|
-| rf-rupiah-detector | 1.941 | Polygon/OBB |
-| rf-money-detection-valid | 9.101 | OBB (4 corner) |
-| rf-rupiah-skripsi | 608 | YOLO bbox |
-| **Total** | **~11.650** | - |
+Dataset ini digabungkan dari 3 dataset Roboflow Universe publik:
 
-Setelah crop bbox, estimasi total crop: **~15.000–20.000** gambar
-(1 gambar bisa mengandung beberapa bounding box)
+| Dataset | Workspace | Project Name | Version | Link Roboflow Universe | Format | Detail |
+|---------|-----------|--------------|---------|------------------------|--------|--------|
+| **rf-rupiah-skripsi** | `skripsi-3kth2` | `deteksi-mata-uang-rupiah-nerog` | v2 | [Roboflow Universe Link](https://universe.roboflow.com/skripsi-3kth2/deteksi-mata-uang-rupiah-nerog) | YOLOv8 | ~1.076 img, 7 kelas |
+| **rf-rupiah-detector** | `rupiah-detector` | `rupiah-detector-qzmb7` | v2 | [Roboflow Universe Link](https://universe.roboflow.com/rupiah-detector/rupiah-detector-qzmb7) | YOLOv8 | ~1.142 img, 7 kelas, mAP 98.8% |
+| **rf-money-detection-valid** | `workspace1-u35mt` | `money-detection-valid` | v4 | [Roboflow Universe Link](https://universe.roboflow.com/workspace1-u35mt/money-detection-valid) | YOLOv8 | ~3.791 img, 8 kelas |
+
+### Script Automatic Download (Roboflow API)
+
+Jalankan script Python berikut untuk menarik ketiga dataset langsung dari Roboflow:
+
+```python
+import os
+from roboflow import Roboflow
+
+BASE_DIR = "data/raw"
+os.makedirs(BASE_DIR, exist_ok=True)
+
+rf = Roboflow(api_key=os.environ["ROBOFLOW_API_KEY"])
+
+rupiah_datasets = [
+    ("skripsi-3kth2", "deteksi-mata-uang-rupiah-nerog", 2, "yolov8", "rf-rupiah-skripsi-2"),
+    ("rupiah-detector", "rupiah-detector-qzmb7", 2, "yolov8", "rf-rupiah-detector-2"),
+    ("workspace1-u35mt", "money-detection-valid", 4, "yolov8", "rf-money-detection-valid-4"),
+]
+
+for workspace, project, version, fmt, folder_name in rupiah_datasets:
+    target = os.path.join(BASE_DIR, folder_name)
+    print(f"Downloading {workspace}/{project} v{version}...")
+    proj = rf.workspace(workspace).project(project)
+    proj.version(version).download(fmt, location=target)
+```
