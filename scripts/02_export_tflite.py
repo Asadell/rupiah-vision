@@ -65,9 +65,17 @@ def make_representative_dataset(data_dir: Path, img_size: int, n_samples: int):
 
 # ─── Export helpers ────────────────────────────────────────────────────────────
 
+def get_converter(model, sm_dir="/tmp/temp_saved_model"):
+    try:
+        model.export(sm_dir)
+        return tf.lite.TFLiteConverter.from_saved_model(sm_dir)
+    except Exception:
+        return tf.lite.TFLiteConverter.from_keras_model(model)
+
+
 def export_fp32(model, output_path: Path):
     print("\n📦 [1/3] Ekspor FP32...")
-    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter = get_converter(model, "/tmp/sm_fp32")
     tflite_model = converter.convert()
     with open(output_path, "wb") as f:
         f.write(tflite_model)
@@ -78,7 +86,7 @@ def export_fp32(model, output_path: Path):
 
 def export_fp16(model, output_path: Path):
     print("\n📦 [2/3] Ekspor FP16...")
-    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter = get_converter(model, "/tmp/sm_fp16")
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     converter.target_spec.supported_types = [tf.float16]
     tflite_model = converter.convert()
@@ -91,17 +99,9 @@ def export_fp16(model, output_path: Path):
 
 def export_int8(model, output_path: Path, rep_dataset_gen, img_size: int):
     print("\n📦 [3/3] Ekspor INT8 (full integer quantization)...")
-    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter = get_converter(model, "/tmp/sm_int8")
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     converter.representative_dataset = rep_dataset_gen
-
-    # Full int8: input/output juga int8 (diperlukan untuk beberapa hardware accelerator)
-    # Untuk flutter tflite_flutter, float32 I/O lebih mudah digunakan
-    # → pakai DEFAULT optimization saja tanpa force int8 I/O
-    # Uncomment baris di bawah kalau butuh fully quantized (EdgeTPU dll):
-    # converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-    # converter.inference_input_type = tf.int8
-    # converter.inference_output_type = tf.int8
 
     tflite_model = converter.convert()
     with open(output_path, "wb") as f:
